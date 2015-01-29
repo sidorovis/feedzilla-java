@@ -2,6 +2,9 @@ package graef.feedzillajava;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 
@@ -14,15 +17,11 @@ import javax.ws.rs.core.MediaType;
 
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.jackson.JacksonFeature;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 public class FeedZilla {
 	public static final String BASE_URL = "http://api.feedzilla.com/v1/";
-	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat
-			.forPattern("yyyy-MM-dd");
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
+			.ofPattern("yyyy-MM-dd");
 	private final URI baseUrl;
 	private WebTarget root;
 	private Client client;
@@ -119,7 +118,7 @@ public class FeedZilla {
 	}
 
 	private Articles queryArticles(Category category, Subcategory subcategory,
-			String query, int count, DateTime since, ArticleOrder order,
+			String query, int count, LocalDateTime since, ArticleOrder order,
 			boolean titleOnly, Culture culture) {
 		WebTarget target = root;
 
@@ -141,8 +140,9 @@ public class FeedZilla {
 			target = target.queryParam("count", count);
 		}
 		if (since != null) {
-			target = target.queryParam("since", since
-					.withZone(DateTimeZone.UTC).toString(DATE_FORMATTER));
+			target = target
+					.queryParam("since", since.atZone(ZoneId.systemDefault())
+							.format(DATE_FORMATTER));
 		}
 		if (order != null) {
 			target = target.queryParam("order", order.name().toLowerCase());
@@ -167,7 +167,7 @@ public class FeedZilla {
 		private Category category = null;
 		private Subcategory subcategory = null;
 		private int count = 0;
-		private DateTime since = null;
+		private LocalDateTime since = null;
 		private ArticleOrder order = null;
 		private boolean titleOnly = false;
 		private Culture culture = null;
@@ -198,7 +198,7 @@ public class FeedZilla {
 			this.category = category;
 			return this;
 		}
-		
+
 		public QueryBuilder category(int categoryId) {
 			return category(new Category(categoryId));
 		}
@@ -211,7 +211,7 @@ public class FeedZilla {
 			this.subcategory = subcategory;
 			return this;
 		}
-		
+
 		public QueryBuilder subcategory(int subcategoryId) {
 			return subcategory(new Subcategory(subcategoryId));
 		}
@@ -229,11 +229,11 @@ public class FeedZilla {
 			return this;
 		}
 
-		public DateTime getSince() {
+		public LocalDateTime getSince() {
 			return since;
 		}
 
-		public QueryBuilder since(DateTime since) {
+		public QueryBuilder since(LocalDateTime since) {
 			this.since = since;
 			return this;
 		}
@@ -264,7 +264,7 @@ public class FeedZilla {
 			this.culture = culture;
 			return this;
 		}
-		
+
 		public QueryBuilder culture(String cultureCode) {
 			return culture(new Culture(cultureCode));
 		}

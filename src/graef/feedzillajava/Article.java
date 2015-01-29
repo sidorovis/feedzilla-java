@@ -1,26 +1,24 @@
 package graef.feedzillajava;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
 @XmlRootElement
 public class Article {
-	private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormat
-			.forPattern("EEE, dd MMM yyyy HH:mm:ss Z");
+	private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter
+			.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z");
 
 	@XmlElement(name = "author", required = false)
 	private final String author = null;
 
 	@XmlElement(name = "publish_date")
 	private String publishDateStr = null;
-	private DateTime publishDate = null;
+	private LocalDateTime publishDate = null;
 
 	@XmlElement(name = "source")
 	private final String source = null;
@@ -42,9 +40,10 @@ public class Article {
 		return author;
 	}
 
-	public DateTime getPublishDate() {
+	public LocalDateTime getPublishDate() {
 		if (publishDate == null && publishDateStr != null) {
-			publishDate = DATETIME_FORMATTER.parseDateTime(publishDateStr);
+			publishDate = LocalDateTime.parse(publishDateStr,
+					DATETIME_FORMATTER);
 			publishDateStr = null;
 		}
 		return publishDate;
