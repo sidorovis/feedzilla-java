@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>graef</groupId>
 	<artifactId>feedzilla-java</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>feedzilla-java</name>
 	<description>Java API for FeedZilla</description>
 
