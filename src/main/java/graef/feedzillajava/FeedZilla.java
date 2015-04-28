@@ -15,21 +15,21 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.jackson.JacksonFeature;
 
-public class FeedZilla {
+public final class FeedZilla {
 	public static final String BASE_URL = "http://api.feedzilla.com/v1/";
-	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
-			.ofPattern("yyyy-MM-dd");
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	private final URI baseUrl;
 	private WebTarget root;
 	private Client client;
 	private String clientSource = "graef.feedzilla-java";
 
-	public FeedZilla() {
+	public FeedZilla(int timeoutMillisecs, String url) {
 		try {
-			baseUrl = new URI(BASE_URL);
+			this.baseUrl = new URI(url);
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}
@@ -40,9 +40,19 @@ public class FeedZilla {
 				return hostname.equals(baseUrl.getHost());
 			}
 		});
-		client = clientBuilder.build();
+		this.client = clientBuilder.build();
+		client.property(ClientProperties.READ_TIMEOUT, timeoutMillisecs);
+		client.property(ClientProperties.CONNECT_TIMEOUT, timeoutMillisecs);
 		client.register(JacksonFeature.class);
-		root = client.target(baseUrl);
+		this.root = client.target(baseUrl);
+	}
+
+	public FeedZilla(int timeoutMillisecs) {
+		this(timeoutMillisecs, BASE_URL);
+	}
+
+	public void close() {
+		client.close();
 	}
 
 	public String getClientSource() {
@@ -54,10 +64,8 @@ public class FeedZilla {
 	}
 
 	public Collection<Culture> getCultures() {
-		return root.path("cultures.json").request()
-				.accept(MediaType.APPLICATION_JSON)
-				.get(new GenericType<List<Culture>>() {
-				});
+		return root.path("cultures.json").request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<Culture>>() {
+		});
 	}
 
 	public List<Category> getCategories(Culture culture, CategoryOrder order) {
@@ -68,9 +76,8 @@ public class FeedZilla {
 		if (order != null) {
 			target = target.queryParam("order", order.name().toLowerCase());
 		}
-		return target.request().accept(MediaType.APPLICATION_JSON)
-				.get(new GenericType<List<Category>>() {
-				});
+		return target.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<Category>>() {
+		});
 	}
 
 	public List<Category> getCategories(CategoryOrder order) {
@@ -81,12 +88,10 @@ public class FeedZilla {
 		return getCategories(null, CategoryOrder.NONE);
 	}
 
-	public List<Subcategory> getSubcategories(Category category,
-			Culture culture, CategoryOrder order) {
+	public List<Subcategory> getSubcategories(Category category, Culture culture, CategoryOrder order) {
 		WebTarget target = root;
 		if (category != null) {
-			target = target.path("categories").path(
-					Integer.toString(category.getId()));
+			target = target.path("categories").path(Integer.toString(category.getId()));
 		}
 		target = target.path("subcategories.json");
 		if (culture != null) {
@@ -95,13 +100,11 @@ public class FeedZilla {
 		if (order != null) {
 			target = target.queryParam("order", order.name().toLowerCase());
 		}
-		return target.request().accept(MediaType.APPLICATION_JSON)
-				.get(new GenericType<List<Subcategory>>() {
-				});
+		return target.request().accept(MediaType.APPLICATION_JSON).get(new GenericType<List<Subcategory>>() {
+		});
 	}
 
-	public List<Subcategory> getSubcategories(Category category,
-			CategoryOrder order) {
+	public List<Subcategory> getSubcategories(Category category, CategoryOrder order) {
 		return getSubcategories(category, null, order);
 	}
 
@@ -117,22 +120,18 @@ public class FeedZilla {
 		return getSubcategories(null, null, CategoryOrder.NONE);
 	}
 
-	private Articles queryArticles(Category category, Subcategory subcategory,
-			String query, int count, LocalDateTime since, ArticleOrder order,
+	private Articles queryArticles(Category category, Subcategory subcategory, String query, int count, LocalDateTime since, ArticleOrder order,
 			boolean titleOnly, Culture culture) {
 		WebTarget target = root;
 
 		if (category != null) {
-			target = target.path("categories").path(
-					Integer.toString(category.getId()));
+			target = target.path("categories").path(Integer.toString(category.getId()));
 			if (subcategory != null) {
-				target = target.path("subcategories").path(
-						Integer.toString(subcategory.getId()));
+				target = target.path("subcategories").path(Integer.toString(subcategory.getId()));
 			}
 		}
 		if (query != null) {
-			target = target.path("articles").path("search.json")
-					.queryParam("q", query);
+			target = target.path("articles").path("search.json").queryParam("q", query);
 		} else {
 			target = target.path("articles.json");
 		}
@@ -140,21 +139,17 @@ public class FeedZilla {
 			target = target.queryParam("count", count);
 		}
 		if (since != null) {
-			target = target
-					.queryParam("since", since.atZone(ZoneId.systemDefault())
-							.format(DATE_FORMATTER));
+			target = target.queryParam("since", since.atZone(ZoneId.systemDefault()).format(DATE_FORMATTER));
 		}
 		if (order != null) {
 			target = target.queryParam("order", order.name().toLowerCase());
 		}
-		target = target.queryParam("clientSource", clientSource).queryParam(
-				"title_only", titleOnly ? 1 : 0);
+		target = target.queryParam("clientSource", clientSource).queryParam("title_only", titleOnly ? 1 : 0);
 		if (category == null && culture != null) {
 			target = target.queryParam("culture_code", culture.getCode());
 		}
 
-		Articles articles = target.request().accept(MediaType.APPLICATION_JSON)
-				.get(Articles.class);
+		Articles articles = target.request().accept(MediaType.APPLICATION_JSON).get(Articles.class);
 		return articles;
 	}
 
@@ -178,16 +173,13 @@ public class FeedZilla {
 
 		public Articles articles() {
 			if (category == null) {
-				throw new IllegalStateException(
-						"articles must not be null, when querying all articles");
+				throw new IllegalStateException("articles must not be null, when querying all articles");
 			}
-			return feedZilla.queryArticles(category, subcategory, null, count,
-					since, order, titleOnly, null);
+			return feedZilla.queryArticles(category, subcategory, null, count, since, order, titleOnly, null);
 		}
 
 		public Articles search(String query) {
-			return feedZilla.queryArticles(category, subcategory, query, count,
-					since, order, titleOnly, culture);
+			return feedZilla.queryArticles(category, subcategory, query, count, since, order, titleOnly, culture);
 		}
 
 		public Category getCategory() {
@@ -222,8 +214,7 @@ public class FeedZilla {
 
 		public QueryBuilder count(int count) {
 			if (count < 0 || count > 100) {
-				throw new IllegalArgumentException(
-						"count must be between 0 and 100 (inclusive");
+				throw new IllegalArgumentException("count must be between 0 and 100 (inclusive");
 			}
 			this.count = count;
 			return this;
