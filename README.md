@@ -1,4 +1,4 @@
-feedzilla-java
+feedzilla-java --- seems that feedzilla does not work
 ==============
 
 Install
